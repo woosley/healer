@@ -21,6 +21,5 @@ func main() {
 		fmt.Println("healer version", version)
 		os.Exit(0)
 	}
-
 	src.App(options)
 }

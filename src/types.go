@@ -9,6 +9,7 @@ type Healer struct {
 	Opts Opt
 	//Status   State
 	//Contents *Content
+	readChan chan chan []Health
 }
 
 type Opt struct {
@@ -19,3 +20,5 @@ type Opt struct {
 }
 
 type Host map[string]string
+
+type Health map[string]string

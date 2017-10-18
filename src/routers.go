@@ -7,8 +7,11 @@ import (
 )
 
 func GetHealth(c echo.Context) error {
+	var cha = make(chan []Health)
 	cc := c.(*Healer)
-	return cc.JSON(http.StatusOK, map[string]string{"me": "cool"})
+	cc.readChan <- cha
+	data := <-cha
+	return cc.JSON(http.StatusOK, data)
 }
 
 func GetHealthFromHost(c echo.Context) error {

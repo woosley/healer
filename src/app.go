@@ -9,11 +9,8 @@ import (
 	"time"
 )
 
-func getHealthState(h Host, cha chan map[string]string) {
-	health := make(map[string]string)
-	health["state"] = "running"
-	cha <- health
-}
+var cha chan bool = make(chan bool)
+var initial bool = true
 
 func looksLikeUrl(s string) bool {
 	if _, err := url.ParseRequestURI(s); err != nil {
@@ -23,37 +20,71 @@ func looksLikeUrl(s string) bool {
 	}
 }
 
-func runHealthCheck(options Opt) {
+func runHealthCheck(options Opt, dataChan chan []Health) {
 
 	isUrl := looksLikeUrl(options.Config)
+
+	data := make([]Health, 0)
+	syncChan := make(chan Health)
 	var config []Host
 	if !isUrl {
 		config = loadConfigFromFile(options.Config)
+	} else {
+		config = loadConfigFromURL(options.Config)
 	}
-	for {
-		if isUrl {
-			config = loadConfigFromURL(options.Config)
-		}
-		GetHealthFor(config)
-		time.Sleep(5000 * time.Millisecond)
+	config = []Host{{"url": "hello"}}
+	var index int
+	for idx, host := range config {
+		go getHealthForHost(host, syncChan)
+		index = idx
 	}
+	for i := 0; i <= index; i++ {
+		h := <-syncChan
+		data = append(data, h)
+	}
+	if !initial {
+		time.Sleep(10 * time.Second)
+	} else {
+		initial = false
+	}
+	dataChan <- data
 }
 
-func GetHealthFor(c []Host) interface{} {
-	cha := make(chan map[string]string)
-	for _, v := range c {
-		go getHealthState(v, cha)
+func getHealthForHost(h Host, syncChan chan Health) {
+	fmt.Println("I am here")
+	healthy := make(Health)
+	healthy["status"] = "running"
+	syncChan <- healthy
+}
+
+func run(options Opt, readChan chan chan []Health, dataChan chan []Health) {
+	var health []Health
+	//trigger dataChan
+	go runHealthCheck(options, dataChan)
+	for {
+		select {
+		// take health from health check
+		case h := <-dataChan:
+			//re run health check
+			health = h
+			go runHealthCheck(options, dataChan)
+		// read channel from http request
+		case cha := <-readChan:
+			// put data into channel
+			cha <- health
+		}
 	}
-	return nil
 }
 
 func App(options Opt) {
 	e := echo.New()
 
+	readChan := make(chan chan []Health)
+	dataChan := make(chan []Health)
 	e.Use(middleware.Logger())
 	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			healer := &Healer{c, options}
+			healer := &Healer{c, options, readChan}
 			return h(healer)
 		}
 	})
@@ -64,7 +95,7 @@ func App(options Opt) {
 		e.Logger.SetLevel(log.INFO)
 	}
 
-	go runHealthCheck(options)
+	go run(options, readChan, dataChan)
 	e.HideBanner = true
 	e.GET("/", GetHealth)
 	e.Logger.Info(fmt.Sprintf("Starting gogate on %v", 1000))

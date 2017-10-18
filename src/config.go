@@ -1,7 +1,7 @@
 package src
 
 func loadConfigFromFile(config string) []Host {
-	var host Host
+	var host Host = make(Host)
 	host["name"] = "hahah"
 	host["url"] = "sdfasdfasdf"
 	host["healthurl"] = "localhsot"
