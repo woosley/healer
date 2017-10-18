@@ -6,5 +6,4 @@ func LoadConfig(config string)[]Host{
 	host.Ip = "sdfasdfasdf"
 	host.HealthUrl = "localhsot"
 	return []Host{}
-
 }
