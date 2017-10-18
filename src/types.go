@@ -1,30 +1,21 @@
 package src
+
 import (
 	"github.com/labstack/echo"
 )
 
-
 type Healer struct {
 	echo.Context
-	Opts     Opt
+	Opts Opt
 	//Status   State
 	//Contents *Content
 }
 
 type Opt struct {
-	Listen      int
-	Is_master   bool
-	Help        bool
-	Master_addr string
-	Expire      int
-	Key         string
-	Version     bool
-	Debug       bool
-	ConfigFile 		string
+	Listen  int    `short:"l" long:"listen" description:"set listen port"`
+	Version bool   `short:"v" long:"version" description:"show current version"`
+	Debug   bool   `short:"d" long:"debug" description:"debug mode"`
+	Config  string `short:"c" long:"config" description:"config file location"`
 }
 
-type Host struct {
-	Ip string
-	Name string
-	HealthUrl string
-}
+type Host map[string]string

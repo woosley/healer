@@ -1,6 +1,6 @@
 //contain all routers
 package src
- 
+
 import (
 	"github.com/labstack/echo"
 	"net/http"

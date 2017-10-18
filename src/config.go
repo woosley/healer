@@ -1,9 +1,13 @@
 package src
 
-func LoadConfig(config string)[]Host{
+func loadConfigFromFile(config string) []Host {
 	var host Host
-	host.Name = "hahah"
-	host.Ip = "sdfasdfasdf"
-	host.HealthUrl = "localhsot"
+	host["name"] = "hahah"
+	host["url"] = "sdfasdfasdf"
+	host["healthurl"] = "localhsot"
+	return []Host{}
+}
+
+func loadConfigFromURL(url string) []Host {
 	return []Host{}
 }
