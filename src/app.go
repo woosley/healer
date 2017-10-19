@@ -20,11 +20,11 @@ func looksLikeUrl(s string) bool {
 	}
 }
 
-func runHealthCheck(options Opt, dataChan chan []Health) {
+func runHealthCheck(options Opt, dataChan DataChan) {
 
 	isUrl := looksLikeUrl(options.Config)
 
-	data := make([]Health, 0)
+	data := make(map[string]Health)
 	syncChan := make(chan Health)
 	var config []Host
 	if !isUrl {
@@ -40,7 +40,7 @@ func runHealthCheck(options Opt, dataChan chan []Health) {
 	}
 	for i := 0; i <= index; i++ {
 		h := <-syncChan
-		data = append(data, h)
+		data[h["key"]] = h
 	}
 	if !initial {
 		time.Sleep(10 * time.Second)
@@ -57,8 +57,8 @@ func getHealthForHost(h Host, syncChan chan Health) {
 	syncChan <- healthy
 }
 
-func run(options Opt, readChan chan chan []Health, dataChan chan []Health) {
-	var health []Health
+func run(options Opt, readChan ReadChan, dataChan DataChan) {
+	var health map[string]Health
 	//trigger dataChan
 	go runHealthCheck(options, dataChan)
 	for {
@@ -71,7 +71,15 @@ func run(options Opt, readChan chan chan []Health, dataChan chan []Health) {
 		// read channel from http request
 		case cha := <-readChan:
 			// put data into channel
-			cha <- health
+			switch t := cha.(type) {
+			case KeyChan:
+				doKeyChan(t, health)
+			case TreeChan:
+				//send to TreeChan
+				t.TChan <- health
+				<-t.Sync
+
+			}
 		}
 	}
 }
@@ -79,8 +87,8 @@ func run(options Opt, readChan chan chan []Health, dataChan chan []Health) {
 func App(options Opt) {
 	e := echo.New()
 
-	readChan := make(chan chan []Health)
-	dataChan := make(chan []Health)
+	readChan := make(ReadChan)
+	dataChan := make(DataChan)
 	e.Use(middleware.Logger())
 	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
