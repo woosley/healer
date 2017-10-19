@@ -13,13 +13,11 @@ type Healer struct {
 }
 
 type Opt struct {
-	Listen  int    `short:"l" long:"listen" description:"set listen port"`
+	Listen  int    `short:"l" long:"listen" description:"set listen port" default:"12345"`
 	Version bool   `short:"v" long:"version" description:"show current version"`
 	Debug   bool   `short:"d" long:"debug" description:"debug mode"`
-	Config  string `short:"c" long:"config" description:"config file location"`
+	Config  string `short:"c" long:"config" description:"config file location" required:"true"`
 }
-
-type Host map[string]string
 
 type Health map[string]string
 

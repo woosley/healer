@@ -26,21 +26,20 @@ func runHealthCheck(options Opt, dataChan DataChan) {
 
 	data := make(map[string]Health)
 	syncChan := make(chan Health)
-	var config []Health
+	var config map[string]Health
 	if !isUrl {
 		config = loadConfigFromFile(options.Config)
 	} else {
 		config = loadConfigFromURL(options.Config)
 	}
-	config = []Health{{"url": "hello", "key": "hello"}}
 	var index int
-	for idx, host := range config {
+	for _, host := range config {
 		go getHealthForHost(host, syncChan)
-		index = idx
+		index += 1
 	}
-	for i := 0; i <= index; i++ {
+	for i := 0; i < index; i++ {
 		h := <-syncChan
-		data[h["key"]] = h
+		data[guessKey(h)] = h
 	}
 	if !initial {
 		time.Sleep(10 * time.Second)
@@ -51,7 +50,11 @@ func runHealthCheck(options Opt, dataChan DataChan) {
 }
 
 func getHealthForHost(h Health, syncChan chan Health) {
-	h["status"] = "running"
+	url := h["health_url"]
+	state, reason, code := getHealthFromURL(url)
+	h["state"] = state
+	h["reason"] = reason
+	h["code"] = code
 	syncChan <- h
 }
 
@@ -104,6 +107,6 @@ func App(options Opt) {
 	e.HideBanner = true
 	e.GET("/", GetHealth)
 	e.GET("/:key", GetHealthFromHost)
-	e.Logger.Info(fmt.Sprintf("Starting gogate on %v", 1000))
-	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", 1000)))
+	e.Logger.Info(fmt.Sprintf("Starting healer on %v", options.Listen))
+	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", options.Listen)))
 }
