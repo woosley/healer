@@ -1,13 +1,14 @@
 package src
 
-func loadConfigFromFile(config string) []Host {
-	var host Host = make(Host)
+func loadConfigFromFile(config string) []Health {
+	var host Health = make(Health)
 	host["name"] = "hahah"
+	host["key"] = "first"
 	host["url"] = "sdfasdfasdf"
 	host["healthurl"] = "localhsot"
-	return []Host{}
+	return []Health{}
 }
 
-func loadConfigFromURL(url string) []Host {
-	return []Host{}
+func loadConfigFromURL(url string) []Health {
+	return []Health{}
 }

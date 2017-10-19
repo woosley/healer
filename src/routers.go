@@ -2,6 +2,7 @@
 package src
 
 import (
+	"fmt"
 	"github.com/labstack/echo"
 	"net/http"
 )
@@ -32,6 +33,10 @@ func GetHealthFromHost(c echo.Context) error {
 
 	cc.readChan <- cha
 	data := <-cha.KChan
+	if len(data) == 0 {
+		return cc.JSON(http.StatusNotFound,
+			map[string]string{"code": fmt.Sprintf("%v", http.StatusNotFound), "message": "Not found"})
+	}
 	dt := cc.JSON(http.StatusOK, data)
 	cha.Sync <- true
 	return dt

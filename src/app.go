@@ -26,13 +26,13 @@ func runHealthCheck(options Opt, dataChan DataChan) {
 
 	data := make(map[string]Health)
 	syncChan := make(chan Health)
-	var config []Host
+	var config []Health
 	if !isUrl {
 		config = loadConfigFromFile(options.Config)
 	} else {
 		config = loadConfigFromURL(options.Config)
 	}
-	config = []Host{{"url": "hello"}}
+	config = []Health{{"url": "hello", "key": "hello"}}
 	var index int
 	for idx, host := range config {
 		go getHealthForHost(host, syncChan)
@@ -50,11 +50,9 @@ func runHealthCheck(options Opt, dataChan DataChan) {
 	dataChan <- data
 }
 
-func getHealthForHost(h Host, syncChan chan Health) {
-	fmt.Println("I am here")
-	healthy := make(Health)
-	healthy["status"] = "running"
-	syncChan <- healthy
+func getHealthForHost(h Health, syncChan chan Health) {
+	h["status"] = "running"
+	syncChan <- h
 }
 
 func run(options Opt, readChan ReadChan, dataChan DataChan) {
@@ -78,7 +76,6 @@ func run(options Opt, readChan ReadChan, dataChan DataChan) {
 				//send to TreeChan
 				t.TChan <- health
 				<-t.Sync
-
 			}
 		}
 	}
@@ -106,6 +103,7 @@ func App(options Opt) {
 	go run(options, readChan, dataChan)
 	e.HideBanner = true
 	e.GET("/", GetHealth)
+	e.GET("/:key", GetHealthFromHost)
 	e.Logger.Info(fmt.Sprintf("Starting gogate on %v", 1000))
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", 1000)))
 }

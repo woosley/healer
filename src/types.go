@@ -23,17 +23,21 @@ type Host map[string]string
 
 type Health map[string]string
 
-type KeyChan struct {
-	KChan chan Health
-	Key   string
+// ReadChan passes data between web request goroutine and main goroutine
+type ReadChan chan interface{}
+
+// DataChan passes updated health status in health goroutine to main goroutine
+type DataChan chan map[string]Health
+
+// TreeChan passes all health tree to web request goroutine
+type TreeChan struct {
+	TChan chan map[string]Health
 	Sync  chan bool
 }
 
-type ReadChan chan interface{}
-
-type DataChan chan map[string]Health
-
-type TreeChan struct {
-	TChan chan map[string]Health
+// KeyChan passes health status for a host to web request goroutine
+type KeyChan struct {
+	KChan chan Health
+	Key   string
 	Sync  chan bool
 }
