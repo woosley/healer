@@ -36,6 +36,10 @@ func loadConfig(s []byte) (map[string]Health, error) {
 		if ok {
 			return _hosts, errors.New(fmt.Sprintf("duplicated key: %s", key))
 		}
+		_, ok = v["healthURL"]
+		if !ok {
+			return _hosts, errors.New(fmt.Sprintf("no healthURL set for: %s", key))
+		}
 
 		_hosts[key] = v
 	}

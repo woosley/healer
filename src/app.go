@@ -60,7 +60,7 @@ func runHealthCheck(ec *echo.Echo, options Opt, dataChan DataChan) {
 }
 
 func getHealthForHost(h Health, syncChan chan Health) {
-	url := h["health_url"]
+	url := h["healthURL"]
 	state, reason, code := getHealthFromURL(url)
 	h["state"] = state
 	h["reason"] = reason
