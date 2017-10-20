@@ -39,3 +39,5 @@ type KeyChan struct {
 	Key   string
 	Sync  chan bool
 }
+
+type ConfigChan chan []Health

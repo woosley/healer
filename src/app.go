@@ -11,6 +11,7 @@ import (
 
 var cha chan bool = make(chan bool)
 var initial bool = true
+var oldConfig map[string]Health
 
 func looksLikeUrl(s string) bool {
 	if _, err := url.ParseRequestURI(s); err != nil {
@@ -19,21 +20,30 @@ func looksLikeUrl(s string) bool {
 		return true
 	}
 }
-
-func runHealthCheck(options Opt, dataChan DataChan) {
+func runHealthCheck(ec *echo.Echo, options Opt, dataChan DataChan) {
 
 	isUrl := looksLikeUrl(options.Config)
 
 	data := make(map[string]Health)
 	syncChan := make(chan Health)
 	var config map[string]Health
+	var e error
 	if !isUrl {
-		config = loadConfigFromFile(options.Config)
+		config, e = loadConfigFromFile(options.Config)
 	} else {
-		config = loadConfigFromURL(options.Config)
+		config, e = loadConfigFromURL(options.Config)
+	}
+	if e != nil {
+		if initial {
+			panic(e)
+		} else {
+			ec.Logger.Error(fmt.Sprintf("reload configuration error:", e))
+		}
+	} else {
+		oldConfig = config
 	}
 	var index int
-	for _, host := range config {
+	for _, host := range oldConfig {
 		go getHealthForHost(host, syncChan)
 		index += 1
 	}
@@ -58,17 +68,17 @@ func getHealthForHost(h Health, syncChan chan Health) {
 	syncChan <- h
 }
 
-func run(options Opt, readChan ReadChan, dataChan DataChan) {
+func run(e *echo.Echo, options Opt, readChan ReadChan, dataChan DataChan) {
 	var health map[string]Health
 	//trigger dataChan
-	go runHealthCheck(options, dataChan)
+	go runHealthCheck(e, options, dataChan)
 	for {
 		select {
 		// take health from health check
 		case h := <-dataChan:
 			//re run health check
 			health = h
-			go runHealthCheck(options, dataChan)
+			go runHealthCheck(e, options, dataChan)
 		// read channel from http request
 		case cha := <-readChan:
 			// put data into channel
@@ -103,7 +113,7 @@ func App(options Opt) {
 		e.Logger.SetLevel(log.INFO)
 	}
 
-	go run(options, readChan, dataChan)
+	go run(e, options, readChan, dataChan)
 	e.HideBanner = true
 	e.GET("/", GetHealth)
 	e.GET("/:key", GetHealthFromHost)

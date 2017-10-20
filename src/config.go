@@ -1,39 +1,61 @@
 package src
 
 import (
+	"errors"
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"net/http"
+	"time"
 )
 
-func loadConfigFromFile(config string) map[string]Health {
-	var hosts []Health
+func loadConfigFromFile(config string) (map[string]Health, error) {
 	data, err := ioutil.ReadFile(config)
-	check(err)
-	err = yaml.Unmarshal(data, &hosts)
-	check(err)
+
+	if err != nil {
+		return make(map[string]Health), err
+	}
+	return loadConfig(data)
+}
+
+func loadConfig(s []byte) (map[string]Health, error) {
+	var hosts []Health
 	_hosts := make(map[string]Health)
+	err := yaml.Unmarshal(s, &hosts)
+
+	if err != nil {
+		return _hosts, err
+	}
+
 	for _, v := range hosts {
 		key := guessKey(v)
 		if key == "" {
-			panic("can not find key: name/ip/key/hostname must set for a host")
+			return _hosts, errors.New("can not find key: name/ip/key/hostname must set for a host")
 		}
 		_, ok := _hosts[key]
 		if ok {
-			panic(fmt.Sprintf("duplicated key: %s", key))
+			return _hosts, errors.New(fmt.Sprintf("duplicated key: %s", key))
 		}
 
 		_hosts[key] = v
 	}
-	return _hosts
+	return _hosts, nil
+
 }
 
-func check(err error) {
-	if err != nil {
-		panic(err)
+func loadConfigFromURL(url string) (map[string]Health, error) {
+	client := http.Client{
+		Timeout: 10 * time.Second,
 	}
-}
-
-func loadConfigFromURL(url string) map[string]Health {
-	return make(map[string]Health)
+	resp, err := client.Get(url)
+	if err != nil {
+		return make(map[string]Health), err
+	} else {
+		if resp.StatusCode != http.StatusOK {
+			return make(map[string]Health), err
+		}
+		defer resp.Body.Close()
+		body, _ := ioutil.ReadAll(resp.Body)
+		return loadConfig(body)
+	}
 }
