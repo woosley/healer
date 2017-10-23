@@ -41,3 +41,8 @@ func GetHealthFromHost(c echo.Context) error {
 	cha.Sync <- true
 	return dt
 }
+
+func GetSelfHealth(c echo.Context) error {
+	return c.JSON(http.StatusOK, map[string]string{"state": "running"})
+
+}

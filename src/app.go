@@ -117,6 +117,7 @@ func App(options Opt) {
 	e.HideBanner = true
 	e.GET("/", GetHealth)
 	e.GET("/:key", GetHealthFromHost)
+	e.GET("/health", GetSelfHealth)
 	e.Logger.Info(fmt.Sprintf("Starting healer on %v", options.Listen))
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", options.Listen)))
 }
