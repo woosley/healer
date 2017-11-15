@@ -36,15 +36,15 @@ func loadConfig(s []byte) (map[string]Health, error) {
 		if ok {
 			return _hosts, errors.New(fmt.Sprintf("duplicated key: %s", key))
 		}
-		_, ok = v["healthURL"]
+		healthURL, ok := v["healthURL"]
 		if !ok {
 			return _hosts, errors.New(fmt.Sprintf("no healthURL set for: %s", key))
+		} else if !looksLikeHostport(healthURL) && !looksLikeUrl(healthURL) {
+			return _hosts, errors.New(fmt.Sprintf("healthURL does not seem to be a url nor hostport: %s", key))
 		}
-
 		_hosts[key] = v
 	}
 	return _hosts, nil
-
 }
 
 func loadConfigFromURL(url string) (map[string]Health, error) {

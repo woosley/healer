@@ -5,7 +5,6 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/labstack/gommon/log"
-	"net/url"
 	"time"
 )
 
@@ -13,13 +12,6 @@ var cha chan bool = make(chan bool)
 var initial bool = true
 var oldConfig map[string]Health
 
-func looksLikeUrl(s string) bool {
-	if _, err := url.ParseRequestURI(s); err != nil {
-		return false
-	} else {
-		return true
-	}
-}
 func runHealthCheck(ec *echo.Echo, options Opt, dataChan DataChan) {
 
 	isUrl := looksLikeUrl(options.Config)
@@ -61,7 +53,7 @@ func runHealthCheck(ec *echo.Echo, options Opt, dataChan DataChan) {
 
 func getHealthForHost(h Health, syncChan chan Health) {
 	url := h["healthURL"]
-	state, reason, code := getHealthFromURL(url)
+	state, reason, code := checkHealthAPI(url)
 	h["state"] = state
 	h["reason"] = reason
 	h["code"] = code

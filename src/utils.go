@@ -4,10 +4,43 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"net/url"
+	"regexp"
+	"strings"
 	"time"
 )
 
+//looksLikeUrl return true when a string can be parse by url.ParseRequestURI
+//and starts with 'http'
+func looksLikeUrl(s string) bool {
+	if _, err := url.ParseRequestURI(s); err != nil {
+		return false
+	} else {
+		if strings.HasPrefix(strings.ToLower(s), "http") {
+			return true
+		} else {
+			return false
+		}
+	}
+}
+
+//looksLikeHostPort return ture when it is a host:port style string
+func looksLikeHostport(s string) bool {
+	if !strings.Contains(s, ":") {
+		return false
+	} else {
+		hostport := strings.SplitN(s, ":", 2)
+		if _, err := regexp.MatchString("[0-9]+", hostport[1]); err == nil {
+			return true
+		} else {
+			return false
+		}
+	}
+}
+
+//return key name
 func guessKey(h Health) string {
 	keys := []string{"key", "name", "hostname", "ip"}
 	for _, key := range keys {
@@ -81,6 +114,24 @@ func getCode(d map[string]interface{}, code int) string {
 		}
 	}
 	return fmt.Sprintf("%v", code)
+}
+
+func getHealthFromHostPort(hostport string) (string, string, string) {
+	conn, _ := net.DialTimeout("tcp", hostport, 10*time.Second)
+	if conn != nil {
+		defer conn.Close()
+		return "running", fmt.Sprintf("%s is open", hostport), "200"
+	}
+	return "error", fmt.Sprintf("can not open %s", hostport), "500"
+}
+
+func checkHealthAPI(url string) (string, string, string) {
+	if looksLikeUrl(url) {
+		return getHealthFromURL(url)
+	} else if looksLikeHostport(url) {
+		return getHealthFromHostPort(url)
+	}
+	return "", "", ""
 }
 
 func getHealthFromURL(url string) (string, string, string) {
