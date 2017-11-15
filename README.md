@@ -19,6 +19,8 @@ it must be a yaml file which contains health url endpoints, for example
 ```
 - name: firstHealthEndPoint
   healthURL: http://www.exmaple.com/health
+- name: hostportcheck
+  healthURL: "host:port"
 ```
 
 the system will try to return a key map with health status injected to the
@@ -31,5 +33,7 @@ item map
 - ip
 
 # API
-`Get /`: show all 
+ 
+`Get /`: show all
+
 `Get /:key`: show an item
